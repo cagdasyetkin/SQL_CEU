@@ -210,3 +210,48 @@ FROM (SELECT S.hacker_id hacker_id, H.name name, S.challenge_id challenge_id, MA
 GROUP BY 1,2
 HAVING total_score > 0
 ORDER BY total_score DESC, hacker_id
+
+
+/*Write a query to output the names of those students whose best friends got offered a 
+higher salary than them. Names must be ordered by the salary amount offered to the best friends. 
+It is guaranteed that no two students got same salary offer.*/
+
+SELECT S.name
+FROM Students S
+JOIN Friends F
+ON F.ID = S.ID
+JOIN Packages P
+ON P.ID = S.ID
+JOIN (SELECT F.Friend_ID, P.Salary FROM Friends F JOIN Packages P ON F.Friend_ID = P.ID) FP
+ON FP.Friend_ID = F.Friend_ID
+WHERE P.Salary < FP.Salary
+ORDER BY FP.Salary
+
+/*
+Write a query to print the contest_id, hacker_id, name, 
+and the sums of total_submissions, total_accepted_submissions, total_views, and total_unique_views for each contest 
+sorted by contest_id. Exclude the contest from the result if all four sums are 0 .*/
+SELECT A.contest_id, A.hacker_id, A.Name, 
+        SUM(total_submissions) As total_submissions, 
+        SUM(total_accepted_submissions) AS total_accepted_submissions,
+        SUM(total_views) AS total_views,
+        SUM(total_unique_views) AS total_unique_views
+FROM Contests AS A
+LEFT JOIN Colleges AS B
+    ON A.contest_id = B.contest_id 
+LEFT JOIN Challenges AS C
+    ON B.college_id = C.college_id 
+LEFT JOIN (SELECT challenge_id, SUM(total_views) AS total_views, 
+                  SUM(total_unique_views) AS total_unique_views
+           FROM View_Stats
+           GROUP BY challenge_id) AS D 
+    ON C.challenge_id = D.challenge_id 
+LEFT JOIN (SELECT challenge_id, SUM(total_submissions) AS total_submissions, 
+                  SUM(total_accepted_submissions) AS total_accepted_submissions
+           FROM Submission_Stats
+           GROUP BY challenge_id) AS E
+    ON C.challenge_id = E.challenge_id 
+GROUP BY A.contest_id, A.hacker_id, A.Name
+HAVING (total_submissions + total_accepted_submissions + total_views + total_unique_views) > 0 
+ORDER BY A.contest_id
+;
